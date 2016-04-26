@@ -1,0 +1,135 @@
+Title         : Databases 261
+Author        : Lenny Brown
+Logo          : True
+
+[TITLE]
+# Entity - Relationship Model
+## From E/R to Relational 
+1. Entity set &rarr; Relation
+2. Attributes &rarr; Attributes
+3. Relationships &rarr; Relations\
+  With Attributes:
+  - Keys are connected entities
+  - Attributes of Relationship itself
+
+## Combining Relations
+Must be:
+
+* The relation for an entity-set *E*
+* The relations for many-one relationships 
+  of which *E* is the "many".
+
+## Weak Entity Sets
+- Relation for weak entity must include
+attributes for its complete key
+- A supporting relationship is redundant
+and yields no relation (unless it has
+attributes).
+
+## Subclasses
+Use nulls &rarr; one relation; entities have
+null in attributes that don't belong to them.\
+(E/R style &rarr; new Relation per subclass, 
+Object Oriented style &rarr; new Relation per Subset)
+
+
+# DB Implementation 
+## Modifications
+### Insert
+    INSERT INTO relation
+    VALUES ( list of values );
+*Specify Attributes to Update*
+
+    INSERT INTO relation(a1, a2)
+    VALUES ( list of values );
+
+*Insert Subquery*
+
+    INSERT INTO relation(a1, a2)
+    ( subquery );
+
+### Add Default Value for Create Table
+    CREATE TABLE table_name (
+      attribute type ( size )
+        DEFAULT assignment,
+    );
+### Deletion
+    DELETE FROM relation
+    WHERE condition;
+*To delete all*
+
+    DELETE FROM relation;
+### Update
+    UPDATE relation
+    SET list of attribute assignments
+    WHERE condition on tuples;
+
+## Constraints
+Kinds of Contraints
+
+- Keys
+  - Single Attribute
+
+        ...
+        attribute type ( size ) PRIMARY KEY
+
+  - Multi Attribute
+        ...
+        PRIMARY KEY ( attr1, attr2, ... )
+
+- Foreign keys, or referential-integrity
+  - Can be declared:
+    - With an Attribute
+
+          attribute type ( size ) 
+            REFERENCES relation ( primary key ),
+    - As a Schema Element
+
+          FOREIGN KEY( attribute name for relation )
+          REFERENCES relation( primary key ),
+    - As a Seperate Declaration
+
+          ALTER TABLE relation
+          ADD CONSTRAINT constraint_name
+          FOREIGN KEY ( attribute name for relation )
+          REFERENCES relation ( primary key );
+  - Violations
+    Given constraint from *R*&nbsp;&rarr;&nbsp;*S*:
+      - [Insert][#sec-insert] or [Update][#sec-update]
+        introduces values not found in *S*
+        - Solution: Rejection
+      - A [Deletion][#sec-deletion] or [Update][#sec-update] to *S*
+        causes some tuples of *R* to "dangle".
+        - Solution { ```ON DELETE```, ```ON UPDATE``` }
+          - Rejection: ```RESTRICT```
+          - Made same changes to R: 
+          ```CASCADE``` 
+          - Change to null: ```SET NULL```
+          - No Action: ```NO ACTION```
+          - Example: 
+          ```
+          FOREIGN KEY ( relation as attribute )
+            REFERENCES relation ( primary key )
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+          ```
+- Value-based
+  - Constrain values of attribute\
+    Example:\ ```attribute type CHECK (subquery)```
+  - Performed only when a value for 
+    that attribute is inserted or updated
+- Tuple-based
+  - Relationship among components 
+  (added to schema)\
+        CHECK ( list of tuples ),
+- Assertions or schema-based constrains
+  - Any boolean expression
+        CREATE ASSERTION assertion
+        CHECK ( boolean expression );
+
+
+
+
+
+
+
