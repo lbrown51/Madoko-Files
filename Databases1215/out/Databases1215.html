@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="generator" content="Madoko, version 1.0.0-rc7" />
+  <meta name="viewport" content="initial-scale=1.0" />
+  <meta name="author" content="Lenny Brown" />
+  <title>Databases 261</title>
+  <style type="text/css"  class="link">
+  /*# sourceURL=madoko.css */
+  
+  .madoko .toc>.tocblock .tocblock .tocblock {
+    margin-left: 2.25em;
+  }
+  .madoko .toc>.tocblock .tocblock {
+    margin-left: 1.5em;
+  }
+  .madoko .toc-contents>.tocblock>.tocitem {
+    font-weight: bold;
+  }
+  .madoko .toc {
+    margin-top: 1em;
+  }
+  .madoko p.para-continue {
+    margin-bottom: 0pt;
+  }
+  .madoko .para-block+p {
+    margin-top: 0pt;
+  }
+  .madoko ul.para-block, .madoko ol.para-block {
+    margin-top: 0pt;
+    margin-bottom: 0pt;
+  }
+  .madoko ul.para-end, .madoko ol.para-end {
+    margin-bottom: 1em;
+  }
+  .madoko dl {
+    margin-left: 0em;
+  }
+  .madoko blockquote {
+    font-style: italic;
+  }
+  .madoko a.localref {
+    text-decoration: none;
+  }
+  .madoko a.localref:hover {
+    text-decoration: underline;
+  }
+  .madoko .footnotes {
+    font-size: smaller;
+    margin-top: 2em;
+  }
+  .madoko .footnotes hr {
+    width: 50%;
+    text-align: left;
+  }
+  .madoko .footnote { 
+    margin-left: 1em;
+  }
+  .madoko .footnote-before {
+    margin-left: -1em;
+    width: 1em;
+    display: inline-block;
+  }
+  .madoko .align-center, .madoko .align-center>p {
+    text-align: center !important;
+  }
+  .madoko .align-center pre {
+    text-align: left;
+  }
+  .madoko .align-center>* {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .madoko .align-left, .madoko .align-left>p {
+    text-align: left !important;
+  }
+  .madoko .align-left>* {
+    margin-left: 0pt !important;
+    margin-right: auto !important;
+  }
+  .madoko .align-right, .madoko .align-right>p {
+    text-align: right !important;
+  }
+  .madoko .align-right>* {
+    margin-left: auto !important;
+    margin-right: 0pt !important;
+  }
+  .madoko .align-center>table,
+  .madoko .align-left>table,
+  .madoko .align-right>table {
+    text-align: left !important;
+  }
+  .madoko .equation-before {
+    float: right;
+  }
+  .madoko .bibitem {
+    font-size: smaller;
+  }
+  .madoko .bibsearch {
+    font-size: x-small;
+    text-decoration:none;
+    color: black;
+    font-family: "Segoe UI Symbol", Symbola, serif;
+  }
+  .madoko .block, .madoko .figure, .madoko .bibitem, .madoko .equation, .madoko div.math {
+    margin-top: 1ex;
+    margin-bottom: 1ex;
+  }
+  .madoko .figure {
+    padding: 0.5em;
+    margin-left: 0pt;
+    margin-right: 0pt;
+  }
+  .madoko .hidden {
+    display: none;
+  }
+  .madoko .invisible {
+    visibility: hidden;
+  }
+  .madoko.preview .invisible {
+    visibility: visible;
+    opacity: 0.5;
+  }
+  .madoko code.code, .madoko span.code {
+    white-space: pre-wrap;
+  }
+  .madoko hr, hr.madoko {
+    border: none;
+    border-bottom: black solid 1px;
+    margin-bottom: 0.5ex;
+  }
+  .madoko .framed>*:first-child {
+    margin-top: 0pt;
+  }
+  .madoko .framed>*:last-child {
+    margin-bottom: 0pt;
+  }
+  .madoko ul.list-style-type-dash {
+      list-style-type: none !important;
+  }
+  .madoko ul.list-style-type-dash > li:before {
+      content: "\2013"; 
+      position: absolute;
+      margin-left: -1em; 
+  }
+  .madoko table.madoko {
+    border-collapse: collapse;
+  }
+  .madoko td, .madoko th {
+    padding: 0ex 0.5ex;
+    margin: 0pt;
+    vertical-align: top;
+  }
+  .madoko .cell-border-left {
+    border-left: 1px solid black;
+  }
+  .madoko .cell-border-right {
+    border-right: 1px solid black;
+  }
+  .madoko thead>tr:first-child>.cell-line,
+  .madoko tbody:first-child>tr:first-child>.cell-line {
+    border-top: 1px solid black;
+    border-bottom: none;
+  }
+  .madoko .cell-line, .madoko .cell-double-line {
+    border-bottom: 1px solid black;
+    border-top: none;
+  }
+  .madoko .cell-double-line {
+    border-top: 1px solid black;
+    padding-top: 1.5px !important;
+  }
+  .madoko .input-mathpre .MathJax_Display {
+    text-align: left !important;
+  }
+  .madoko div.input-mathpre {
+    text-align: left;
+    margin-top: 1.5ex;
+    margin-bottom: 1ex;
+  }
+  .madoko .math-rendering {
+    color: gray;
+  }
+  .madoko .mathdisplay {
+    text-align: center;
+  }
+  .madoko .pretty table {
+    border-collapse: collapse;
+  }
+  .madoko .pretty td {
+    padding: 0em;
+  }
+  .madoko .pretty td.empty {
+    min-width: 1.5ex;
+  }
+  .madoko .pretty td.expander {
+    width: 100em;
+  }
+  body.madoko, .madoko .serif {
+    font-family: Cambria,"Times New Roman","Liberation Serif","Times",serif;
+  }
+  .madoko .sans-serif {
+    font-family: "Calibri", "Optima", sans-serif;
+  }
+  .madoko .symbol {
+    font-family: "Segoe UI Symbol", Symbola, serif;
+  }
+  body.madoko {  
+    -webkit-text-size-adjust: 100%;       
+    text-rendering: optimizeLegibility;
+  }
+  body.madoko {
+    max-width: 88ex; 
+    margin: 1em auto;
+    padding: 0em 2em;  
+  }
+  body.preview.madoko {
+    padding: 0em 1em;
+  }
+  .madoko p {
+    text-align: justify;
+  }
+  .madoko h1, .madoko h2, .madoko h3, .madoko h4 { 
+    margin-top: 1.22em; 
+    margin-bottom: 1ex;
+  }
+  .madoko h1+p, .madoko h2+p, .madoko h3+p, .madoko h4+p, .madoko h5+p  { 
+    margin-top: 1ex;    
+  }
+  .madoko h5, .madoko h6 { 
+    margin-top: 1ex;
+    font-size: 1em;
+  }
+  .madoko h5 { 
+    margin-bottom: 0.5ex;
+  }
+  .madoko h5 + p {
+    margin-top: 0.5ex;
+  }
+  .madoko h6 { 
+    margin-bottom: 0pt;
+  }
+  .madoko h6 + p {
+    margin-top: 0pt;
+  }
+  .madoko pre, .madoko code, .madoko kbd, .madoko samp, .madoko tt, 
+  .madoko .monospace, .madoko .token-indent, .madoko .reveal pre, .madoko .reveal code, .madoko .email {
+    font-family: Consolas,"Andale Mono WT","Andale Mono",Lucida Console,Monaco,monospace,monospace;
+    font-size: 0.85em;
+  }
+  .madoko pre code, .madoko .token-indent {
+    font-size: 0.95em;
+  }
+  .madoko pre code {
+    font-family: inherit !important;
+  }
+  .madoko ol.linenums li {
+    background-color: white;
+    list-style-type: decimal;
+  }
+  .madoko .remote {
+    background-color: #F0FFF0;
+  }
+  .madoko .remote + * {
+    margin-top: 0pt;
+  }
+  @media print {
+    body.madoko {
+      font-size: 10pt;
+    }
+    @page {
+      margin: 1in 1.5in;
+    }
+  }
+  @media only screen and (max-device-width:1024px) {
+    body.madoko {
+      padding: 0em 0.5em;    
+    }
+    .madoko li {
+      text-align: left;
+    }
+  }
+  
+    </style>
+  
+  </head>
+<body class="madoko">
+
+<div class="body madoko" style="line-adjust:0">
+
+<div class="titleblock align-center para-block" style="text-align:center;line-adjust:0">
+<div class="titleheader align-center" style="text-align:center;line-adjust:0">
+<div class="title para-block" style="font-size:xx-large;font-weight:bold;margin-bottom:0.5ex;line-adjust:0">Databases 261</div></div>
+<div class="authors align-center" style="text-align:center;width:80%;line-adjust:0"><table class="authorrow columns block" style="margin-top:2ex;width:100%;line-adjust:0">
+<tbody><tr><td class="author column" style="text-align:center;line-adjust:0">
+<div class="authorname" style="font-size:large;line-adjust:0">Lenny Brown</div></td></tr></tbody></table></div></div><h2 id="sec-entity---relationship-model" class="h1" data-heading-depth="1" style="display:block"><span class="heading-before"><span class="heading-label">1</span>.&#8194;</span>Entity - Relationship Model</h2><h3 id="sec-from-er-to-relational" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">1.1</span>.&#8194;</span>From E/R to Relational</h3>
+<ol class="ol compact">
+<li class="li ol-li compact-li">Entity set &#8594; Relation
+</li>
+<li class="li ol-li compact-li">Attributes &#8594; Attributes
+</li>
+<li class="li ol-li compact-li">Relationships &#8594; Relations<br>
+With Attributes:
+
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Keys are connected entities
+</li>
+<li class="li ul-li list-dash-li compact-li">Attributes of Relationship itself
+</li></ul></li></ol>
+<h3 id="sec-combining-relations" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">1.2</span>.&#8194;</span>Combining Relations</h3>
+<p class="p noindent">Must be:
+</p>
+<ul class="ul list-star compact">
+<li class="li ul-li list-star-li compact-li">The relation for an entity-set <em class="em-star1">E</em>
+</li>
+<li class="li ul-li list-star-li compact-li">The relations for many-one relationships 
+of which <em class="em-star1">E</em> is the &#8220;many&#8221;.
+</li></ul>
+<h3 id="sec-weak-entity-sets" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">1.3</span>.&#8194;</span>Weak Entity Sets</h3>
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Relation for weak entity must include
+attributes for its complete key
+</li>
+<li class="li ul-li list-dash-li compact-li">A supporting relationship is redundant
+and yields no relation (unless it has
+attributes).
+</li></ul>
+<h3 id="sec-subclasses" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">1.4</span>.&#8194;</span>Subclasses</h3>
+<p class="p noindent">Use nulls &#8594; one relation; entities have
+null in attributes that don&#39;t belong to them.<br>
+(E/R style &#8594; new Relation per subclass, 
+Object Oriented style &#8594; new Relation per Subset)
+</p><h2 id="sec-db-implementation" class="h1" data-heading-depth="1" style="display:block"><span class="heading-before"><span class="heading-label">2</span>.&#8194;</span>DB Implementation</h2><h3 id="sec-modifications" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">2.1</span>.&#8194;</span>Modifications</h3><h4 id="sec-insert" class="h3" data-heading-depth="3" style="display:block"><span class="heading-before"><span class="heading-label">2.1.1</span>.&#8194;</span>Insert</h4>
+<pre class="para-block pre-indented" style="display:block"><code>INSERT INTO relation
+VALUES ( list of values );</code></pre>
+<p class="p noindent para-continued"><em class="em-star1">Specify Attributes to Update</em>
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>INSERT INTO relation(a1, a2)
+VALUES ( list of values );</code></pre>
+<p class="p noindent para-continued"><em class="em-star1">Insert Subquery</em>
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>INSERT INTO relation(a1, a2)
+( subquery );</code></pre><h4 id="sec-add-default-value-for-create-table" class="h3" data-heading-depth="3" style="display:block"><span class="heading-before"><span class="heading-label">2.1.2</span>.&#8194;</span>Add Default Value for Create Table</h4>
+<pre class="para-block pre-indented" style="display:block"><code>CREATE TABLE table_name (
+  attribute type ( size )
+    DEFAULT assignment,
+);</code></pre><h4 id="sec-deletion" class="h3" data-heading-depth="3" style="display:block"><span class="heading-before"><span class="heading-label">2.1.3</span>.&#8194;</span>Deletion</h4>
+<pre class="para-block pre-indented" style="display:block"><code>DELETE FROM relation
+WHERE condition;</code></pre>
+<p class="p noindent para-continued"><em class="em-star1">To delete all</em>
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>DELETE FROM relation;</code></pre><h4 id="sec-update" class="h3" data-heading-depth="3" style="display:block"><span class="heading-before"><span class="heading-label">2.1.4</span>.&#8194;</span>Update</h4>
+<pre class="para-block pre-indented" style="display:block"><code>UPDATE relation
+SET list of attribute assignments
+WHERE condition on tuples;</code></pre><h3 id="sec-constraints" class="h2" data-heading-depth="2" style="display:block"><span class="heading-before"><span class="heading-label">2.2</span>.&#8194;</span>Constraints</h3>
+<p class="p noindent">Kinds of Contraints
+</p>
+<ul class="ul list-dash loose">
+<li class="li ul-li list-dash-li loose-li">
+<p>Keys
+</p>
+<ul class="ul list-dash loose">
+<li class="li ul-li list-dash-li loose-li">
+<p>Single Attribute
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>...
+attribute type ( size ) PRIMARY KEY</code></pre></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Multi Attribute
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>...
+PRIMARY KEY ( attr1, attr2, ... )</code></pre></li></ul>
+</li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Foreign keys, or referential-integrity
+</p>
+<ul class="ul list-dash loose">
+<li class="li ul-li list-dash-li loose-li">
+<p>Can be declared:
+</p>
+<ul class="ul list-dash loose">
+<li class="li ul-li list-dash-li loose-li">
+<p>With an Attribute
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>attribute type ( size ) 
+  REFERENCES relation ( primary key ),</code></pre></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>As a Schema Element
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>FOREIGN KEY( attribute name for relation )
+REFERENCES relation( primary key ),</code></pre></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>As a Seperate Declaration
+</p>
+<pre class="para-block pre-indented" style="display:block"><code>ALTER TABLE relation
+ADD CONSTRAINT constraint_name
+FOREIGN KEY ( attribute name for relation )
+REFERENCES relation ( primary key );</code></pre></li></ul></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Violations
+Given constraint from <em class="em-star1">R</em>&#160;&#8594;&#160;<em class="em-star1">S</em>:
+</p>
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li"><a href="#sec-insert" title="2.1.1.&#8194;Insert" class="localref" style="target-element:h3">Insert</a> or&nbsp;<a href="#sec-update" title="2.1.4.&#8194;Update" class="localref" style="target-element:h3">Update</a>
+introduces values not found in <em class="em-star1">S</em>
+
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Solution: Rejection
+</li></ul></li>
+<li class="li ul-li list-dash-li compact-li">A&nbsp;<a href="#sec-deletion" title="2.1.3.&#8194;Deletion" class="localref" style="target-element:h3">Deletion</a> or&nbsp;<a href="#sec-update" title="2.1.4.&#8194;Update" class="localref" style="target-element:h3">Update</a> to <em class="em-star1">S</em>
+causes some tuples of <em class="em-star1">R</em> to &#8220;dangle&#8221;.
+
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Solution { <code class="code code3">ON DELETE</code>, <code class="code code3">ON UPDATE</code> }
+
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Rejection: <code class="code code3">RESTRICT</code>
+</li>
+<li class="li ul-li list-dash-li compact-li">Made same changes to R: 
+<code class="code code3">CASCADE</code> 
+</li>
+<li class="li ul-li list-dash-li compact-li">Change to null: <code class="code code3">SET NULL</code>
+</li>
+<li class="li ul-li list-dash-li compact-li">No Action: <code class="code code3">NO ACTION</code>
+</li>
+<li class="li ul-li list-dash-li compact-li">Example: 
+
+<pre class="para-block pre-fenced pre-fenced3" style="display:block"><code>FOREIGN KEY ( relation as attribute )
+REFERENCES relation ( primary key )
+ON DELETE SET NULL
+ON UPDATE CASCADE,</code></pre></li></ul></li></ul></li></ul>
+</li></ul></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Value-based
+</p>
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Constrain values of attribute<br>
+Example:&#160;<code class="code code3">attribute type CHECK (subquery)</code>
+</li>
+<li class="li ul-li list-dash-li compact-li">Performed only when a value for 
+that attribute is inserted or updated
+</li></ul></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Tuple-based
+</p>
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Relationship among components 
+(added to schema)<br>
+
+<pre class="para-block pre-indented" style="display:block"><code>CHECK ( list of tuples ),</code></pre></li></ul></li>
+<li class="li ul-li list-dash-li loose-li">
+<p>Assertions or schema-based constrains
+</p>
+<ul class="ul list-dash compact">
+<li class="li ul-li list-dash-li compact-li">Any boolean expression
+
+<pre class="para-block pre-indented" style="display:block"><code>CREATE ASSERTION assertion
+CHECK ( boolean expression );</code></pre></li></ul>
+</li></ul>
+
+<div class="logomadoko" style="display:block;text-align:right;font-size:xx-small;margin-top:4em">Created with&nbsp;<a href="https://www.madoko.net">Madoko.net</a>.</div><span data-line=""></span></div>
+</body>
+
+</html>

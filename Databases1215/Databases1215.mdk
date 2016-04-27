@@ -1,0 +1,427 @@
+Title         : Databases 261
+Author        : Lenny Brown
+Logo          : True
+
+[TITLE]
+# Entity - Relationship Model
+## From E/R to Relational 
+1. Entity set &rarr; Relation
+2. Attributes &rarr; Attributes
+3. Relationships &rarr; Relations\
+  With Attributes:
+  - Keys are connected entities
+  - Attributes of Relationship itself
+
+## Combining Relations
+Must be:
+
+* The relation for an entity-set *E*
+* The relations for many-one relationships 
+  of which *E* is the "many".
+
+## Weak Entity Sets
+- Relation for weak entity must include
+attributes for its complete key
+- A supporting relationship is redundant
+and yields no relation (unless it has
+attributes).
+
+## Subclasses
+Use nulls &rarr; one relation; entities have
+null in attributes that don't belong to them.\
+(E/R style &rarr; new Relation per subclass, 
+Object Oriented style &rarr; new Relation per Subset)
+
+
+# DB Implementation 
+## Modifications
+### Insert
+    INSERT INTO relation
+    VALUES ( list of values );
+*Specify Attributes to Update*
+
+    INSERT INTO relation(a1, a2)
+    VALUES ( list of values );
+
+*Insert Subquery*
+
+    INSERT INTO relation(a1, a2)
+    ( subquery );
+
+### Add Default Value for Create Table
+    CREATE TABLE table_name (
+      attribute type ( size )
+        DEFAULT assignment,
+    );
+### Deletion
+    DELETE FROM relation
+    WHERE condition;
+*To delete all*
+
+    DELETE FROM relation;
+### Update
+    UPDATE relation
+    SET list of attribute assignments
+    WHERE condition on tuples;
+
+## Constraints
+Kinds of Contraints
+
+- Keys
+  - Single Attribute
+
+        ...
+        attribute type ( size ) PRIMARY KEY
+
+  - Multi Attribute
+        ...
+        PRIMARY KEY ( attr1, attr2, ... )
+
+- Foreign keys, or referential-integrity
+  - Can be declared:
+    - With an Attribute
+
+          attribute type ( size ) 
+            REFERENCES relation ( primary key ),
+    - As a Schema Element
+
+          FOREIGN KEY( attribute name for relation )
+          REFERENCES relation( primary key ),
+    - As a Separate Declaration
+
+          ALTER TABLE relation
+          ADD CONSTRAINT constraint_name
+          FOREIGN KEY ( attribute name for relation )
+          REFERENCES relation ( primary key );
+  - Violations
+    Given constraint from *R*&nbsp;&rarr;&nbsp;*S*:
+      - [Insert][#sec-insert] or [Update][#sec-update]
+        introduces values not found in *S*
+        - Solution: Rejection
+      - A [Deletion][#sec-deletion] or [Update][#sec-update] to *S*
+        causes some tuples of *R* to "dangle".
+        - Solution { ``` ON DELETE ```, ``` ON UPDATE ``` }
+          - Rejection: ``` RESTRICT ```
+          - Made same changes to R: ``` CASCADE ``` 
+          - Change to null: ``` SET NULL ```
+          - No Action: ``` NO ACTION ```
+          - Example: 
+          ```
+          FOREIGN KEY ( relation as attribute )
+            REFERENCES relation ( primary key )
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+          ```
+- Value-based
+  - Constrain values of attribute\
+    Example:\ ```attribute type CHECK (subquery)```
+  - Performed only when a value for 
+    that attribute is inserted or updated
+- Tuple-based
+  - Relationship among components 
+  (added to schema)\
+        CHECK ( list of tuples ),
+- Assertions or schema-based constrains
+  - Any boolean expression
+        CREATE ASSERTION assertion
+        CHECK ( boolean expression );
+
+
+
+
+
+## Triggers
+    CREATE TRIGGER trigger_name
+      { BEFORE, AFTER, INSTEAD OF } { INSERT, DELETE, UPDATE } ON { relation, attribute }
+      REFERENCING { NEW, OLD } { TUPLE, TABLE } AS new_name
+      [FOR EACH ROW]
+      WHEN ( boolean expression )
+      [BEGIN]
+        modification query
+      [END];
+
+
+
+~ Remark
+
+
+  - Event Update can be ``` UPDATE OF attribute ON relation ```
+  - Triggers are either Row level or Statement level
+  - Instead Of is used if the relation is a view
+  - Referencing can be:
+  ```
+      REFERENCING
+        OLD ROW AS old_name
+        NEW ROW AS new_name
+    ```
+~
+
+## Views
+- A view is a relation defined in terms of 
+  stored tables and other views
+  - Can be Virtual (not stored) or Materialized
+    (actually constructed)
+  
+  ~ Example {label: View}
+
+    ```
+      CREATE [MATERIALIZED] VIEW view_name AS 
+        SELECT a.attr1, b.attr2
+        FROM a, b, c
+        WHERE a.attr2 = b.attr2
+          AND a.attr1 = c.attr3
+          AND b.attr3 = c.attr1
+    ```
+  ~
+  - Can be queried like a regular relation
+  - Can be triggered with INSTEAD OF
+  
+  ~ Example {label: View Trigger}
+   
+   ```
+    CREATE TRIGGER trigger_name
+      INSTEAD OF INSERT ON view_name
+      NEW ROW AS new_name
+      FOR EACH ROW
+      BEGIN
+        INSERT INTO a VALUES();
+        INSERT INTO b(attr1, attr2) VALUES();
+        INSERT INTO c VALUES();
+     END;
+   ``` 
+  ~
+
+## Transactions
+We need to make sure that queries do not
+interfere with each other. That would be bad.
+ACID transactions exist for this.
+
+- ``` COMMIT ``` Causes a transaction to complete
+- Four levels of isolation\
+  ``` SET TRANSACTION ISOLATION LEVEL X ```
+  - Where X can be
+  - ``` SERIALIZABLE ``` &rarr;
+    Effects seen after or before, 
+    but not in middle of transaction
+  - ``` REPEATABLE READ ``` &rarr;
+    Like read committed AND if data is read again
+    , then everything seen the first time will be seen 
+    the second time
+  - ``` READ COMMITTED ``` &rarr;
+    Can only see committed data, but 
+    not necessarily the same data each time 
+  - ``` READ UNCOMMITTED ``` &rarr;
+    Can see data in database, even if it has
+    not been committed
+
+
+## Normalization
+We want to avoid anomalies and redundancy
+
+- Insert anomaly: adding one fact requires
+  adding a second fact.
+- Update anomaly: one occurrence of a fact is
+  changed, but not all occurrences.
+- Deletion anomaly: valid fact is lost when a
+  tuple is deleted. 
+
+Goals:
+
+- Decompose relations while some FD fails a form criteriond
+- Maintain
+  - Non-Additive (lossless) Join Property (MUST!)
+  - Dependency Preservation Property (Desirable)
+
+### Functional Dependencies
+- X &rarr; Y ("X determines Y") is an
+  assertion about a relation R that whenever
+  two tuples of R agree on all the attributes in set X,
+  then they must also agree on all attributes in set Y
+  - Convention : 
+    - Sets of Attributes: (X, Y, Z)
+    - Single Attributes: (A, B, C)
+- Splitting Right Sides of FD's
+  - X &rarr; A~1~A~2~...A~n~ holds for R
+    exactly when each of X &rarr; A~1~, ...
+    X &rarr; A~n~ hold for R
+  - A &rarr; BC &equiv; A &rarr; B 
+    and A &rarr; C
+
+### Keys of Relations
+- K is a superkey for relation R if
+  K functionally determines all of R
+- K is a key for R if K is a superkey,
+  but no proper subset of K is a superkey
+
+### Closure Testing
+An easy way to compute closure of Y, denoted Y^+^
+
+- Basis : Y^+^ = Y
+- Induction: Look for an FD's left side X that 
+  is a subset of the current Y^+^. If the FD is
+  X &rarr; A, add A to Y^+^
+
+### First Normal Form
+  - A relation R is in 1NF &hArr;
+    - All attributes are atomic
+    
+### Second Normal Form
+  - A relation R is in 2NF &hArr;
+    - R is in 1NF
+    - Every non-prime attribute of R is fully 
+      functionally dependent on the primary key of R
+
+### Third Normal Form
+  - A relation R is in 3NF &hArr;
+    - R is in 2NF
+    - No non-prime attribute of R is transitively 
+      dependent on the primary key of R
+    - For every FD X &rarr; A that holds in R, either
+      1. X is a superkey of R,\
+      or
+      2. A is a prime attribute of R
+  - An attribute is prime if it is a member of any key
+
+### Boyce-Codd Normal FOrm
+  - R is in BCNF if whenever X &rarr; Y is a nontrivial FD
+    that holds in R, X is a superkey
+    - Remember: nontrivial means Y is not contained in X.
+    - Remember: A superkey is any superset of a key
+      (not necessarily a proper superset)
+
+~ Remark
+Three important properties of decomposition
+
+ - Lossless Join: it should be possible to project the original
+  relations onto the decomposed schema, and then reconstruct the original
+ - Non-additive Join: A join should not generate tuples that we never had before
+ - Dependency Preservation: It should be possible to check in the projected
+  relations whether all the given FD's are satisfied.
+~
+
+# DB Application Programming
+SQL in real programs:
+
+  - Code in a specialized language
+    stored in the database itself (PSM, PL/SQL)
+  - SQL statements are embedded in a host language (C)
+  - Connection tools are used to allow conventional language to access
+    a database (CLI, JDBC, PHP/DB)
+
+## PSM - Persistent Stored Modules
+~ Example {label: Usual PSM}
+
+
+    CREATE PROCEDURE name (
+      parameter list )
+      optional local declarations
+      body;
+~
+~ Example {label: Functional Alternative}
+
+
+    CREATE FUNCTION name (
+      parameter list ) RETURNS type
+~
+
+Unlike name-type pairs found in languages like C,
+PSM uses mode-name-type triples, where mode can be:
+  
+  - IN = Procedure uses value, does not change value
+  - OUT  = Procedure changes, does not use  
+  - INOUT = both 
+
+~ Example {label: Something Simple}
+
+
+    CREATE PROCEDURE name (
+      IN b CHAR(20),
+      IN p REAL
+    )
+    INSERT INTO relation
+    VALUES(b, p);
+~
+--------------------------------
+~ Note
+To call the procedure, use \
+` name ( b, p ); `
+~
+--------------------------------
+
+Kinds of PSM statements
+
+  - `RETURN expression ` sets the return value
+    of a function
+    - It does not terminate it.
+  - `Declare name type` used to declare local variables
+  - `BEGIN`...`END` for groups of statements seperated by semicolons.
+  - Assignment: `SET variable = expression`
+  - Statement labels: Give a statement a label by prefixing a name and a colon
+
+### If Statements
+~ Example {label: Function with If Statement}
+
+
+    CREATE FUNCTION name (IN b CHAR(20) )
+        RETURNS CHAR(10)
+        DECLARE num_count INTEGER;
+      BEGIN
+        SET num_count = (SELECT COUNT(*) FROM relation
+                      WHERE attr1 = b);
+        IF num_count < value1 THEN RETURN statement1
+        ELSEIF num_count < value2 THEN RETURN statement2
+        ELSE RETURN statement3
+        END IF;
+      END;
+Return occurs at `END` not at any of the `RETRUN`'s. 
+~
+
+### Loops
+  - Basic form : \
+  ```
+  loop_name : LOOP 
+    statements
+    LEAVE loop_name;
+  END LOOP;
+  ```
+  - Exit from a loop by `LEAVE loop_name`
+  - Other Forms:
+  ```
+    WHILE condition DO
+      statements
+    END WHILE
+  ```
+  And 
+  ```
+    REPEAT
+      statements
+    UNTIL condition
+    END REPEAT;
+  ```
+
+### Queries
+Three ways to get the effect of a query
+
+1. Queries producing value can be the expression in an assignment\
+  `SET p = ( SELECT FROM WHERE query);`
+2. Single-row `SELECT ... INTO`\
+  `SELECT attr1 INTO p FROM relation WHERE condition;`
+3. Cursors
+  - A cursor is essentially a tuple-variable that ranges over all tuples in the result of some query.
+  - Declare with `DECLARE name CURSOR FOR query`
+  - To use, we must issue `OPEN c;` and we use `CLOSE c;` when finished
+  - To fetch tuples we can use `FETCH FROM c into x1,x2,...xn`
+    - The x's are variables, one for each component of the tuples referred to by c.
+    - After each fetch, c is moved to next x.
+    - We use SQLSTATE, the status of an SQL operation, to exit cursor
+      - We exit a cursor by `DECLARE NotFound CONDITION FOR SQLSTATE '0200';`
+
+```
+  cursorLoop: LOOP
+    ...
+    FETCH c INTO ... ;
+    IF NotFound THEN LEAVE cursorLoop;
+    END IF;
+    ...
+  END LOOP;
+```
