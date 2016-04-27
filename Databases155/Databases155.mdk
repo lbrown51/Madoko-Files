@@ -1,0 +1,674 @@
+Title         : Databases 261
+Author        : Lenny Brown
+Logo          : True
+
+[TITLE]
+# Entity - Relationship Model
+## From E/R to Relational 
+1. Entity set &rarr; Relation
+2. Attributes &rarr; Attributes
+3. Relationships &rarr; Relations\
+  With Attributes:
+  - Keys are connected entities
+  - Attributes of Relationship itself
+
+## Combining Relations
+Must be:
+
+* The relation for an entity-set *E*
+* The relations for many-one relationships 
+  of which *E* is the "many".
+
+## Weak Entity Sets
+- Relation for weak entity must include
+attributes for its complete key
+- A supporting relationship is redundant
+and yields no relation (unless it has
+attributes).
+
+## Subclasses
+Use nulls &rarr; one relation; entities have
+null in attributes that don't belong to them.\
+(E/R style &rarr; new Relation per subclass, 
+Object Oriented style &rarr; new Relation per Subset)
+
+
+# DB Implementation 
+## Modifications
+### Insert
+    INSERT INTO relation
+    VALUES ( list of values );
+*Specify Attributes to Update*
+
+    INSERT INTO relation(a1, a2)
+    VALUES ( list of values );
+
+*Insert Subquery*
+
+    INSERT INTO relation(a1, a2)
+    ( subquery );
+
+### Add Default Value for Create Table
+    CREATE TABLE table_name (
+      attribute type ( size )
+        DEFAULT assignment,
+    );
+### Deletion
+    DELETE FROM relation
+    WHERE condition;
+*To delete all*
+
+    DELETE FROM relation;
+### Update
+    UPDATE relation
+    SET list of attribute assignments
+    WHERE condition on tuples;
+
+## Constraints
+Kinds of Contraints
+
+- Keys
+  - Single Attribute
+
+        ...
+        attribute type ( size ) PRIMARY KEY
+
+  - Multi Attribute
+        ...
+        PRIMARY KEY ( attr1, attr2, ... )
+
+- Foreign keys, or referential-integrity
+  - Can be declared:
+    - With an Attribute
+
+          attribute type ( size ) 
+            REFERENCES relation ( primary key ),
+    - As a Schema Element
+
+          FOREIGN KEY( attribute name for relation )
+          REFERENCES relation( primary key ),
+    - As a Separate Declaration
+
+          ALTER TABLE relation
+          ADD CONSTRAINT constraint_name
+          FOREIGN KEY ( attribute name for relation )
+          REFERENCES relation ( primary key );
+  - Violations
+    Given constraint from *R*&nbsp;&rarr;&nbsp;*S*:
+      - [Insert][#sec-insert] or [Update][#sec-update]
+        introduces values not found in *S*
+        - Solution: Rejection
+      - A [Deletion][#sec-deletion] or [Update][#sec-update] to *S*
+        causes some tuples of *R* to "dangle".
+        - Solution { ``` ON DELETE ```, ``` ON UPDATE ``` }
+          - Rejection: ``` RESTRICT ```
+          - Made same changes to R: ``` CASCADE ``` 
+          - Change to null: ``` SET NULL ```
+          - No Action: ``` NO ACTION ```
+          - Example: 
+          ```
+          FOREIGN KEY ( relation as attribute )
+            REFERENCES relation ( primary key )
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+          ```
+- Value-based
+  - Constrain values of attribute\
+    Example:\ ```attribute type CHECK (subquery)```
+  - Performed only when a value for 
+    that attribute is inserted or updated
+- Tuple-based
+  - Relationship among components 
+  (added to schema)\
+        CHECK ( list of tuples ),
+- Assertions or schema-based constrains
+  - Any boolean expression
+        CREATE ASSERTION assertion
+        CHECK ( boolean expression );
+
+
+
+
+
+## Triggers
+    CREATE TRIGGER trigger_name
+      { BEFORE, AFTER, INSTEAD OF } { INSERT, DELETE, UPDATE } ON { relation, attribute }
+      REFERENCING { NEW, OLD } { TUPLE, TABLE } AS new_name
+      [FOR EACH ROW]
+      WHEN ( boolean expression )
+      [BEGIN]
+        modification query
+      [END];
+
+
+
+~ Remark
+
+
+  - Event Update can be ``` UPDATE OF attribute ON relation ```
+  - Triggers are either Row level or Statement level
+  - Instead Of is used if the relation is a view
+  - Referencing can be:
+  ```
+      REFERENCING
+        OLD ROW AS old_name
+        NEW ROW AS new_name
+    ```
+~
+
+## Views
+- A view is a relation defined in terms of 
+  stored tables and other views
+  - Can be Virtual (not stored) or Materialized
+    (actually constructed)
+  
+  ~ Example {label: View}
+
+    ```
+      CREATE [MATERIALIZED] VIEW view_name AS 
+        SELECT a.attr1, b.attr2
+        FROM a, b, c
+        WHERE a.attr2 = b.attr2
+          AND a.attr1 = c.attr3
+          AND b.attr3 = c.attr1
+    ```
+  ~
+  - Can be queried like a regular relation
+  - Can be triggered with INSTEAD OF
+  
+  ~ Example {label: View Trigger}
+   
+   ```
+    CREATE TRIGGER trigger_name
+      INSTEAD OF INSERT ON view_name
+      NEW ROW AS new_name
+      FOR EACH ROW
+      BEGIN
+        INSERT INTO a VALUES();
+        INSERT INTO b(attr1, attr2) VALUES();
+        INSERT INTO c VALUES();
+     END;
+   ``` 
+  ~
+
+## Transactions
+We need to make sure that queries do not
+interfere with each other. That would be bad.
+ACID transactions exist for this.
+
+- ``` COMMIT ``` Causes a transaction to complete
+- Four levels of isolation\
+  ``` SET TRANSACTION ISOLATION LEVEL X ```
+  - Where X can be
+  - ``` SERIALIZABLE ``` &rarr;
+    Effects seen after or before, 
+    but not in middle of transaction
+  - ``` REPEATABLE READ ``` &rarr;
+    Like read committed AND if data is read again
+    , then everything seen the first time will be seen 
+    the second time
+  - ``` READ COMMITTED ``` &rarr;
+    Can only see committed data, but 
+    not necessarily the same data each time 
+  - ``` READ UNCOMMITTED ``` &rarr;
+    Can see data in database, even if it has
+    not been committed
+
+
+## Normalization
+We want to avoid anomalies and redundancy
+
+- Insert anomaly: adding one fact requires
+  adding a second fact.
+- Update anomaly: one occurrence of a fact is
+  changed, but not all occurrences.
+- Deletion anomaly: valid fact is lost when a
+  tuple is deleted. 
+
+Goals:
+
+- Decompose relations while some FD fails a form criteriond
+- Maintain
+  - Non-Additive (lossless) Join Property (MUST!)
+  - Dependency Preservation Property (Desirable)
+
+### Functional Dependencies
+- X &rarr; Y ("X determines Y") is an
+  assertion about a relation R that whenever
+  two tuples of R agree on all the attributes in set X,
+  then they must also agree on all attributes in set Y
+  - Convention : 
+    - Sets of Attributes: (X, Y, Z)
+    - Single Attributes: (A, B, C)
+- Splitting Right Sides of FD's
+  - X &rarr; A~1~A~2~...A~n~ holds for R
+    exactly when each of X &rarr; A~1~, ...
+    X &rarr; A~n~ hold for R
+  - A &rarr; BC &equiv; A &rarr; B 
+    and A &rarr; C
+
+### Keys of Relations
+- K is a superkey for relation R if
+  K functionally determines all of R
+- K is a key for R if K is a superkey,
+  but no proper subset of K is a superkey
+
+### Closure Testing
+An easy way to compute closure of Y, denoted Y^+^
+
+- Basis : Y^+^ = Y
+- Induction: Look for an FD's left side X that 
+  is a subset of the current Y^+^. If the FD is
+  X &rarr; A, add A to Y^+^
+
+### First Normal Form
+  - A relation R is in 1NF &hArr;
+    - All attributes are atomic
+    
+### Second Normal Form
+  - A relation R is in 2NF &hArr;
+    - R is in 1NF
+    - Every non-prime attribute of R is fully 
+      functionally dependent on the primary key of R
+
+### Third Normal Form
+  - A relation R is in 3NF &hArr;
+    - R is in 2NF
+    - No non-prime attribute of R is transitively 
+      dependent on the primary key of R
+    - For every FD X &rarr; A that holds in R, either
+      1. X is a superkey of R,\
+      or
+      2. A is a prime attribute of R
+  - An attribute is prime if it is a member of any key
+
+### Boyce-Codd Normal FOrm
+  - R is in BCNF if whenever X &rarr; Y is a nontrivial FD
+    that holds in R, X is a superkey
+    - Remember: nontrivial means Y is not contained in X.
+    - Remember: A superkey is any superset of a key
+      (not necessarily a proper superset)
+
+~ Remark
+Three important properties of decomposition
+
+ - Lossless Join: it should be possible to project the original
+  relations onto the decomposed schema, and then reconstruct the original
+ - Non-additive Join: A join should not generate tuples that we never had before
+ - Dependency Preservation: It should be possible to check in the projected
+  relations whether all the given FD's are satisfied.
+~
+
+# DB Application Programming
+SQL in real programs:
+
+  - Code in a specialized language
+    stored in the database itself (PSM, PL/SQL)
+  - SQL statements are embedded in a host language (C)
+  - Connection tools are used to allow conventional language to access
+    a database (CLI, JDBC, PHP/DB)
+
+## PSM - Persistent Stored Modules
+~ Example {label: Usual PSM}
+
+
+    CREATE PROCEDURE name (
+      parameter list )
+      optional local declarations
+      body;
+~
+~ Example {label: Functional Alternative}
+
+
+    CREATE FUNCTION name (
+      parameter list ) RETURNS type
+~
+
+Unlike name-type pairs found in languages like C,
+PSM uses mode-name-type triples, where mode can be:
+  
+  - IN = Procedure uses value, does not change value
+  - OUT  = Procedure changes, does not use  
+  - INOUT = both 
+
+~ Example {label: Something Simple}
+
+
+    CREATE PROCEDURE name (
+      IN b CHAR(20),
+      IN p REAL
+    )
+    INSERT INTO relation
+    VALUES(b, p);
+~
+--------------------------------
+~ Note
+To call the procedure, use \
+` name ( b, p ); `
+~
+--------------------------------
+
+Kinds of PSM statements
+
+  - `RETURN expression ` sets the return value
+    of a function
+    - It does not terminate it.
+  - `Declare name type` used to declare local variables
+  - `BEGIN`...`END` for groups of statements seperated by semicolons.
+  - Assignment: `SET variable = expression`
+  - Statement labels: Give a statement a label by prefixing a name and a colon
+
+### If Statements
+~ Example {label: Function with If Statement}
+
+
+    CREATE FUNCTION name (IN b CHAR(20) )
+        RETURNS CHAR(10)
+        DECLARE num_count INTEGER;
+      BEGIN
+        SET num_count = (SELECT COUNT(*) FROM relation
+                      WHERE attr1 = b);
+        IF num_count < value1 THEN RETURN statement1
+        ELSEIF num_count < value2 THEN RETURN statement2
+        ELSE RETURN statement3
+        END IF;
+      END;
+Return occurs at `END` not at any of the `RETRUN`'s. 
+~
+
+### Loops
+  - Basic form : \
+  ```
+  loop_name : LOOP 
+    statements
+    LEAVE loop_name;
+  END LOOP;
+  ```
+  - Exit from a loop by `LEAVE loop_name`
+  - Other Forms:
+  ```
+    WHILE condition DO
+      statements
+    END WHILE
+  ```
+  And 
+  ```
+    REPEAT
+      statements
+    UNTIL condition
+    END REPEAT;
+  ```
+
+### Queries
+Three ways to get the effect of a query
+
+1. Queries producing value can be the expression in an assignment\
+  `SET p = ( SELECT FROM WHERE query);`
+2. Single-row `SELECT ... INTO`\
+  `SELECT attr1 INTO p FROM relation WHERE condition;`
+3. Cursors
+  - A cursor is essentially a tuple-variable that ranges over all tuples in the result of some query.
+  - Declare with `DECLARE name CURSOR FOR query`
+  - To use, we must issue `OPEN c;` and we use `CLOSE c;` when finished
+  - To fetch tuples we can use `FETCH FROM c into x1,x2,...xn`
+    - The x's are variables, one for each component of the tuples referred to by c.
+    - After each fetch, c is moved to next x.
+    - We use SQLSTATE, the status of an SQL operation, to exit cursor
+      - We exit a cursor by `DECLARE NotFound CONDITION FOR SQLSTATE '0200';`
+
+```
+  cursorLoop: LOOP
+    ...
+    FETCH c INTO ... ;
+    IF NotFound THEN LEAVE cursorLoop;
+    END IF;
+    ...
+  END LOOP;
+```
+## Embedded SQL
+exists, but who cares
+
+## Database Connection Libraries
+Three Tier Architecture for Servers
+
+- Web servers -- talk to the user
+- Application servers -- execute the business logic
+- Database servers -- get what the app servers need from the
+  database.
+
+MVC: Common organization of the software
+
+- Model -- encapsulates the data
+- View -- User interface
+- Controller -- business logic, system.
+
+The databse is, in many DB-access languages, an environment
+
+Database servers maintain some number of connections to app servers
+
+The app server issues statements: queries and modifications, usually.
+
+### PHP
+- Goes into html with `<?PHP code ?>`
+- Variables begin with $ 
+  - Do not have type
+- Value belongs to a class and methods of that class are
+  available to it.
+- Two kinds of arrays
+  - Numeric (indexed): `$a = array('a1','a2','a3');`
+  - Associative (dictionary): 
+
+
+              $dsn = array(
+                'phptype' => 'mysql',
+                'hostpec' => 'betaweb.csug.rochester.edu',
+                );
+- PHP uses PDO to access database `new PDO($dsn, $dbuser, $dbpass);`
+- Query:
+
+
+          $sql = query;
+          $stmt = $db->query( $sql );
+- To fetch results from cursors:
+
+
+    while( $row = $stmt->fetch() )
+    {
+      do something with row
+        ex: $row[0]
+        or: $row['attr']
+        or: $row->attribute
+    }
+
+#### Forms
+    <?php
+    $salesYear = $_GET['year'];
+    $stmt = $db->prepare(
+      'SELECT Month, SUM(Amount) AS Total ' .
+      'FROM Sales ' .
+      'WHERE Year = :salesYear ' .
+      'GROUP BY Month;');
+    $params = array(':salesYear' => $salesYear);
+    $stmt->execute($params);
+    echo "Here are the data for year $salesYear:";
+    foreach($stmt->fetchAll() as $row) {
+     echo $row['Month'], ' : $',
+       $row['Amount'], '<br>';
+}
+Sanitize Input and Watch out for SQL injection!!
+
+
+# Database Performance
+## Indexing
+A file contains some records and we want faster access to those records.
+
+Index = data structure used to speed access to tuples of a relation
+given values of one or more attributes.
+
+Could be a hash table, but in a DBMS it is usually
+a balanced search tree with giant nodes (a full disk page) called a B-tree
+
+What's stored in an index:
+
+- Three main options: a key **k** maps to a data entry which is
+  1. K*: the actual record
+  2. (**k**, id): the key plus the record id
+  3. (k, id list)
+- Operations on an index:
+  - Search: Given a key, find all records
+  - Insert / Remove entries
+
+#### Implicit Indexes
+The DBMS automatically creates an index for every attribute (or set of) that is
+declared UNIQUE (including PRIMARY KEY)
+
+
+    CREATE INDEX name ON relation(attribute);
+    CREATE INDEX name2 ON relation2(attribute1, attribute2);
+    
+    
+    CREATE TABLE relation2 (
+      ...
+      INDEX (attribute1, attribute2)
+      ...
+    )
+
+#### Using Indices
+Given a value *v*, the index takes us to only those tuples that have *v*
+in the attribute(s) of the index.
+
+#### Tuning
+Whcih indices to create
+
+- Pro: An index speeds up queries that can use it
+- Con: An index slows down all modifications on its relation
+  because the index must be modified too.
+
+### Index Structure
+- B-Trees
+  - Very good for range queries, sorted data
+  - Some old databases only implemented Btrees
+  - Make 1 node the size of 1 physical page.
+  - Balanced, height adjusted tree
+
+#### B+ Trees
+Make leaves into a linked list (range queries)
+
+Parameter d = the degree
+
+Each node has &ge; d and &le; 2d keys
+
+Searching:
+
+  - Exact key values
+    - Start at the root
+    - Proceed down to the leaf
+  - Range queries:
+    - As above
+    - Then sequential traversal
+
+How large?
+
+  - Key size = 4 bytes
+  - Pointer size = 8 bytes
+  - Block size = 4096 bytes
+  - 2d*4 + (2d+1)*8 &le 4096
+  - d = 170
+
+Insertion:
+Insert(K, P)
+
+- Find leaf where K belongs, insert
+- If no overflow (2d keys or less), halt
+- If overflow (2d+1 keys), split node, insert in parent: (K3, ) to parent
+- If leaf, keep K3 too in right node
+- When root splits, new root has 1 key only
+
+
+
+- Hash Tables
+  - There are variants of this basic structure to deal with IO
+
+### Clustered Indexes
+#### Index Classification
+An index is _clustered_ if the data is ordered in the same way as the underlying data
+
+Clustered (or not) **dramatically impacts** cost
+
+Cost:
+  - N: The number of records
+  - R: Number of records per page
+
+Measure number of page I/O's
+
+Franout of Tree is F\
+Range query for M entries (100 per page)\
+How many IOs to search for single item?
+
+Clustered:\
+Tranversal of the tree: log~F~(1.5N)\
+Range search Query : log~F~(1.5N) + ceil(M/100)
+
+Unclustered:\
+Tranversal of the tree: log~F~(1.5N)\
+Range search Query : log~F~(1.5N) + M
+
+Clustered:\
+log~F~
+(1.5N) + ceil(M/100) ~ 1 Random IO (10ms)
+
+Unclustered:\
+log~F~
+(1.5N) + M Random IO (M*10ms)
+
+If M is 1 then there is no difference
+If M is 100,000 records, ~10 minutes vs. 10ms
+
+### External Merge Sort
+Exists. I'm not gonna remember more.
+
+# DB Security
+A file system identifies certain privelages for the objects it manages\
+Typically read, write, execture.
+
+Identifies priveleged users\
+Typically the owner, a group, all users
+
+SQL Privileges:
+
+  - SELECT = right to query the relation
+  - INSERT = right to insert
+  - DELETE
+  - UPDATE
+
+Views are very important for access control
+
+    CREATE VIEW safeView as
+      SELECT attribute1, attribute3
+Queries on safeView do not require priveleges for view.
+
+A user is referred to by authorization ID, typically their login name.
+
+- There is an authorization ID PUBLIC
+  - This gives privilege to anyone
+
+    GRANT list of priveleges
+    ON relation or other object
+    TO list of authorization ID's;
+    [WITH GRANT OPTION]
+
+  - Grant Option allows granted user to grand privilege to others.
+
+Revoking Options:
+
+    REVOKE list of privileges
+    ON relation or other object
+    FROM list of authorization ID's
+    
+Options:
+
+  - CASCADE : Now, any grants made by a revokee are also not in force,
+    no matter how far the privilege was passed
+  - RESTRICT : does not cascade
+
+ENCRYPT THINGS
