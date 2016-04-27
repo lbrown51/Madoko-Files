@@ -425,3 +425,250 @@ Three ways to get the effect of a query
     ...
   END LOOP;
 ```
+## Embedded SQL
+exists, but who cares
+
+## Database Connection Libraries
+Three Tier Architecture for Servers
+
+- Web servers -- talk to the user
+- Application servers -- execute the business logic
+- Database servers -- get what the app servers need from the
+  database.
+
+MVC: Common organization of the software
+
+- Model -- encapsulates the data
+- View -- User interface
+- Controller -- business logic, system.
+
+The databse is, in many DB-access languages, an environment
+
+Database servers maintain some number of connections to app servers
+
+The app server issues statements: queries and modifications, usually.
+
+### PHP
+- Goes into html with `<?PHP code ?>`
+- Variables begin with $ 
+  - Do not have type
+- Value belongs to a class and methods of that class are
+  available to it.
+- Two kinds of arrays
+  - Numeric (indexed): `$a = array('a1','a2','a3');`
+  - Associative (dictionary): 
+
+
+              $dsn = array(
+                'phptype' => 'mysql',
+                'hostpec' => 'betaweb.csug.rochester.edu',
+                );
+- PHP uses PDO to access database `new PDO($dsn, $dbuser, $dbpass);`
+- Query:
+
+
+          $sql = query;
+          $stmt = $db->query( $sql );
+- To fetch results from cursors:
+
+
+    while( $row = $stmt->fetch() )
+    {
+      do something with row
+        ex: $row[0]
+        or: $row['attr']
+        or: $row->attribute
+    }
+
+#### Forms
+    <?php
+    $salesYear = $_GET['year'];
+    $stmt = $db->prepare(
+      'SELECT Month, SUM(Amount) AS Total ' .
+      'FROM Sales ' .
+      'WHERE Year = :salesYear ' .
+      'GROUP BY Month;');
+    $params = array(':salesYear' => $salesYear);
+    $stmt->execute($params);
+    echo "Here are the data for year $salesYear:";
+    foreach($stmt->fetchAll() as $row) {
+     echo $row['Month'], ' : $',
+       $row['Amount'], '<br>';
+}
+Sanitize Input and Watch out for SQL injection!!
+
+
+# Database Performance
+## Indexing
+A file contains some records and we want faster access to those records.
+
+Index = data structure used to speed access to tuples of a relation
+given values of one or more attributes.
+
+Could be a hash table, but in a DBMS it is usually
+a balanced search tree with giant nodes (a full disk page) called a B-tree
+
+What's stored in an index:
+
+- Three main options: a key **k** maps to a data entry which is
+  1. K*: the actual record
+  2. (**k**, id): the key plus the record id
+  3. (k, id list)
+- Operations on an index:
+  - Search: Given a key, find all records
+  - Insert / Remove entries
+
+#### Implicit Indexes
+The DBMS automatically creates an index for every attribute (or set of) that is
+declared UNIQUE (including PRIMARY KEY)
+
+
+    CREATE INDEX name ON relation(attribute);
+    CREATE INDEX name2 ON relation2(attribute1, attribute2);
+    
+    
+    CREATE TABLE relation2 (
+      ...
+      INDEX (attribute1, attribute2)
+      ...
+    )
+
+#### Using Indices
+Given a value *v*, the index takes us to only those tuples that have *v*
+in the attribute(s) of the index.
+
+#### Tuning
+Whcih indices to create
+
+- Pro: An index speeds up queries that can use it
+- Con: An index slows down all modifications on its relation
+  because the index must be modified too.
+
+### Index Structure
+- B-Trees
+  - Very good for range queries, sorted data
+  - Some old databases only implemented Btrees
+  - Make 1 node the size of 1 physical page.
+  - Balanced, height adjusted tree
+
+#### B+ Trees
+Make leaves into a linked list (range queries)
+
+Parameter d = the degree
+
+Each node has &ge; d and &le; 2d keys
+
+Searching:
+
+  - Exact key values
+    - Start at the root
+    - Proceed down to the leaf
+  - Range queries:
+    - As above
+    - Then sequential traversal
+
+How large?
+
+  - Key size = 4 bytes
+  - Pointer size = 8 bytes
+  - Block size = 4096 bytes
+  - 2d*4 + (2d+1)*8 &le 4096
+  - d = 170
+
+Insertion:
+Insert(K, P)
+
+- Find leaf where K belongs, insert
+- If no overflow (2d keys or less), halt
+- If overflow (2d+1 keys), split node, insert in parent: (K3, ) to parent
+- If leaf, keep K3 too in right node
+- When root splits, new root has 1 key only
+
+
+
+- Hash Tables
+  - There are variants of this basic structure to deal with IO
+
+### Clustered Indexes
+#### Index Classification
+An index is _clustered_ if the data is ordered in the same way as the underlying data
+
+Clustered (or not) **dramatically impacts** cost
+
+Cost:
+  - N: The number of records
+  - R: Number of records per page
+
+Measure number of page I/O's
+
+Franout of Tree is F\
+Range query for M entries (100 per page)\
+How many IOs to search for single item?
+
+Clustered:\
+Tranversal of the tree: log~F~(1.5N)\
+Range search Query : log~F~(1.5N) + ceil(M/100)
+
+Unclustered:\
+Tranversal of the tree: log~F~(1.5N)\
+Range search Query : log~F~(1.5N) + M
+
+Clustered:\
+log~F~
+(1.5N) + ceil(M/100) ~ 1 Random IO (10ms)
+
+Unclustered:\
+log~F~
+(1.5N) + M Random IO (M*10ms)
+
+If M is 1 then there is no difference
+If M is 100,000 records, ~10 minutes vs. 10ms
+
+### External Merge Sort
+Exists. I'm not gonna remember more.
+
+# DB Security
+A file system identifies certain privelages for the objects it manages\
+Typically read, write, execture.
+
+Identifies priveleged users\
+Typically the owner, a group, all users
+
+SQL Privileges:
+
+  - SELECT = right to query the relation
+  - INSERT = right to insert
+  - DELETE
+  - UPDATE
+
+Views are very important for access control
+
+    CREATE VIEW safeView as
+      SELECT attribute1, attribute3
+Queries on safeView do not require priveleges for view.
+
+A user is referred to by authorization ID, typically their login name.
+
+- There is an authorization ID PUBLIC
+  - This gives privilege to anyone
+
+    GRANT list of priveleges
+    ON relation or other object
+    TO list of authorization ID's;
+    [WITH GRANT OPTION]
+
+  - Grant Option allows granted user to grand privilege to others.
+
+Revoking Options:
+
+    REVOKE list of privileges
+    ON relation or other object
+    FROM list of authorization ID's
+    
+Options:
+
+  - CASCADE : Now, any grants made by a revokee are also not in force,
+    no matter how far the privilege was passed
+  - RESTRICT : does not cascade
+
+ENCRYPT THINGS
